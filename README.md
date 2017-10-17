@@ -277,12 +277,18 @@ We use ```HDF5``` to be able to [easily convert](convert_weights.ipynb) weigths 
 3. Install (Optional but highly recoommended)
 
 ### OpenCV
-#### Ubuntu
+####Linux and Windows (build from source)
+[OpenCV 3](https://github.com/opencv/opencv.git) is more preferred as CUDA runtime bug found in OpenCV v2.4.13
+
+#### Ubuntu (Binary)
 We need ```OpenCV``` for a couple of examples which grab frames from a web camera.
 It is not a dependency and can be removed if necessary.
 This was tested on ```Ubuntu-16``` and might need some changes on a different system.
 
-1. ```sudo apt-get install libopencv-dev python-opencv```
+```sudo apt-get install libopencv-dev python-opencv```
+
+#### Windows (Binary)
+https://opencv.org/releases.html
 
 ### Pytorch-C++
 ```Pytorch-C++``` is a library on top of ```ATen``` that provides a [Pytorch](http://pytorch.org/)-like
