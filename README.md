@@ -277,7 +277,7 @@ We use ```HDF5``` to be able to [easily convert](convert_weights.ipynb) weigths 
 3. Install (Optional but highly recoommended)
 
 ### OpenCV
-####Linux and Windows (build from source)
+#### Linux and Windows (build from source)
 [OpenCV 3](https://github.com/opencv/opencv.git) is more preferred as CUDA runtime bug found in OpenCV v2.4.13
 
 #### Ubuntu (Binary)
