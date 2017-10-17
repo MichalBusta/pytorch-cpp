@@ -1311,9 +1311,6 @@ vector<string> torch::get_hdf5_file_keys(string hdf5_filename)
     return names;
 }
 
-
-
-
    // void inspect_checkpoint(string hdf5_filename)
    // {
 
