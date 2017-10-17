@@ -1,4 +1,3 @@
-
 #include "pytorch.h"
 
 torch::Module::Module()
@@ -11,13 +10,13 @@ torch::Module::~Module()
 
 }
 
-Tensor torch::Module::Forward(Tensor input)
+Tensor torch::Module::forward(Tensor input)
 {
 	return input;
 }
 
 
- string  torch::Module::ToString(int indentation_level)
+ string  torch::Module::tostring(int indentation_level)
 {
 
     std::stringstream s;
@@ -30,7 +29,7 @@ Tensor torch::Module::Forward(Tensor input)
     {
 
         s << indentation << " (" << name_module_pair.first << ") "
-        << name_module_pair.second->ToString(indentation_level + 1) << std::endl;
+        << name_module_pair.second->tostring(indentation_level + 1) << std::endl;
     }
 
     s << indentation << ")" << std::endl;
@@ -132,329 +131,359 @@ void torch::Module::save_weights(string hdf5_filename)
     save(hdf5_filename, model_state_dict);
 }
 
+map<string, Tensor> torch::load(string hdf5_filename)
+{
+	map<string, Tensor> tensor_dict;
+
+	// use our get_names function
+	vector<string> tensor_names = get_hdf5_file_keys(hdf5_filename);
+
+	H5::H5File file = H5::H5File(hdf5_filename, H5F_ACC_RDONLY);
+
+	// Array to store the shape of the current tensor
+	hsize_t * dims_hsize_t;
+
+	// We need this because one function can't accept hsize_t
+	vector<int64_t> dims_int;
+
+	// Float buffer to intermediately store weights
+	float * float_buffer;
+
+	// 'Rank' of the tensor
+	int ndims;
+
+	// Number of elements in the current tensor
+	hsize_t tensor_flattened_size;
+
+	Tensor buffer_tensor;
+
+	for (auto tensor_name : tensor_names)
+	{
+		dims_int.clear();
+
+		// Open a 'dataset' which stores current tensor
+		H5::DataSet current_dataset = file.openDataSet(tensor_name);
+
+		// We can infer the sizes of a store tensor from H5::DataSpace
+		H5::DataSpace dataspace = current_dataset.getSpace();
+		ndims = dataspace.getSimpleExtentNdims();
+
+		// Get the overall number of elements -- we need this
+		// to allocate the temporary buffer
+		tensor_flattened_size = dataspace.getSimpleExtentNpoints();
+
+		// Get the shame of the tensor
+		dims_hsize_t = new hsize_t[ndims];
+		dataspace.getSimpleExtentDims(dims_hsize_t, NULL);
+
+		for (int i = 0; i < ndims; ++i)
+		{
+			// Converting hsize_t to int
+			dims_int.push_back(int64_t(dims_hsize_t[i]));
+		}
+
+		// Allocate temporary float buffer
+		// TODO: add support for other types like int
+		// and make automatic type inference
+		float_buffer = new float[tensor_flattened_size];
+
+		current_dataset.read(float_buffer, H5::PredType::NATIVE_FLOAT,
+			dataspace, dataspace);
+
+		buffer_tensor = CPU(kFloat).tensorFromBlob(float_buffer, dims_int);
+
+		tensor_dict[tensor_name] = buffer_tensor.type().copy(buffer_tensor);
+
+		delete[] float_buffer;
+		delete[] dims_hsize_t;
+	}
+
+	file.close();
+
+	return tensor_dict;
+}
 
 void torch::save(string hdf5_filename, map<string, Tensor> dict_to_write)
 {
 	H5::H5File file = H5::H5File(hdf5_filename, H5F_ACC_TRUNC);
 
-	//for (auto name_tensor_pair : dict_to_write)
-	//{
+	for (auto name_tensor_pair : dict_to_write)
+	{
 
-	//	auto tensor_to_write = name_tensor_pair.second.contiguous();
-	//	auto tensor_name = name_tensor_pair.first;
+		auto tensor_to_write = name_tensor_pair.second.contiguous();
+		auto tensor_name = name_tensor_pair.first;
 
-	//	auto dims = tensor_to_write.sizes();
+		auto dims = tensor_to_write.sizes();
 
-	//	// The dimensionality of the tensor
-	//	auto ndims = tensor_to_write.ndimension();
-	//	auto tensor_flattened_size = tensor_to_write.numel();
-	//	auto tensor_to_write_flatten = tensor_to_write.view({ -1 });
-	//	auto tensor_to_write_flatten_accessor = tensor_to_write_flatten.accessor<float, 1>();
+		// The dimensionality of the tensor
+		auto ndims = tensor_to_write.ndimension();
+		auto tensor_flattened_size = tensor_to_write.numel();
+		auto tensor_to_write_flatten = tensor_to_write.view({ -1 });
+		auto tensor_to_write_flatten_accessor = tensor_to_write_flatten.accessor<float, 1>();
 
-	//	float * float_buffer = new float[tensor_flattened_size];
+		float * float_buffer = new float[tensor_flattened_size];
 
-	//	// Convert an array of ints into an array of hsize_t
-	//	auto dims_hsize_t = new hsize_t[ndims];
+		// Convert an array of ints into an array of hsize_t
+		auto dims_hsize_t = new hsize_t[ndims];
 
-	//	for (int i = 0; i < ndims; ++i)
-	//	{
-	//		dims_hsize_t[i] = dims[i];
-	//	}
+		for (int i = 0; i < ndims; ++i)
+		{
+			dims_hsize_t[i] = dims[i];
+		}
 
-	//	for (int i = 0; i < tensor_flattened_size; ++i)
-	//	{
+		for (int i = 0; i < tensor_flattened_size; ++i)
+		{
 
-	//		float_buffer[i] = tensor_to_write_flatten_accessor[i];
-	//	}
+			float_buffer[i] = tensor_to_write_flatten_accessor[i];
+		}
 
-	//	H5::DataSpace space(ndims, dims_hsize_t);
+		H5::DataSpace space(ndims, dims_hsize_t);
 
-	//	H5::DataSet dataset = H5::DataSet(file.createDataSet(tensor_name,
-	//		H5::PredType::NATIVE_FLOAT,
-	//		space));
+		H5::DataSet dataset = H5::DataSet(file.createDataSet(tensor_name,
+			H5::PredType::NATIVE_FLOAT,
+			space));
 
 
-	//	dataset.write(float_buffer, H5::PredType::NATIVE_FLOAT);
+		dataset.write(float_buffer, H5::PredType::NATIVE_FLOAT);
 
-	//	delete[] float_buffer;
-	//}
+		delete[] float_buffer;
+	}
 
 	file.close();
 }
 
-   //     
-   //     void load_weights(string hdf5_filename)
-   //     {
+        
+void torch::Module::load_weights(string hdf5_filename)
+{
+    // TODO:
+    // (1) Add check to make sure that the network is on cpu
+    //     before loading weights
+    // (2) Add support for not float. So far only works with
+    //     float weights only.
 
-   // 
-   //       // TODO:
-   //       // (1) Add check to make sure that the network is on cpu
-   //       //     before loading weights
-   //       // (2) Add support for not float. So far only works with
-   //       //     float weights only.
+    map<string, Tensor> model_state_dict;
+    map<string, Tensor> checkpoint_dict;
 
-   //       map<string, Tensor> model_state_dict;
-   //       map<string, Tensor> checkpoint_dict;
+    this->state_dict(model_state_dict);
+    checkpoint_dict = load(hdf5_filename);
 
-   //       this->state_dict(model_state_dict);
-   //       checkpoint_dict = load(hdf5_filename);
+    // Compare model_state_dict -> checkpoint_dict keys consistency
 
-   //       // Compare model_state_dict -> checkpoint_dict keys consistency
+    for(auto name_tensor_pair : model_state_dict)
+	{
+		if(checkpoint_dict.count(name_tensor_pair.first) != 1)
+		{
+			cout << "WARNING: model requires parameter ('" << name_tensor_pair.first << "') "
+				<< "which is not present in the checkpoint file. Using model's default." << endl;
+		}
+	}
 
-   //       for(auto name_tensor_pair : model_state_dict)
-   //       {
+    // Compare checkpoint_dict -> model_state_dict keys consistency
+    for(auto name_tensor_pair : checkpoint_dict)
+	{
+		if(model_state_dict.count(name_tensor_pair.first) != 1)
+		{
+			cout << "WARNING: checkpoint file contains parameter ('" << name_tensor_pair.first << "') "
+				<< "which is not required by the model. The parameter is not used." << endl;
+		}
+	}
 
-   //         if(checkpoint_dict.count(name_tensor_pair.first) != 1)
-   //         {
+    for(auto name_tensor_pair : model_state_dict)
+    {
+		if(checkpoint_dict.count(name_tensor_pair.first) == 1)
+		{
+			// Copy in-place
+			name_tensor_pair.second.copy_(checkpoint_dict[name_tensor_pair.first]);
+		}
+    }
+}
 
-   //           cout << "WARNING: model requires parameter ('" << name_tensor_pair.first << "') "
-   //                << "which is not present in the checkpoint file. Using model's default." << endl;
-   //         }
-   //       }
+torch::Sequential::Sequential()
+{
+    module_name = "Sequential";
+};
 
-   //       // Compare checkpoint_dict -> model_state_dict keys consistency
+torch::Sequential::~Sequential()
+{
 
-   //       for(auto name_tensor_pair : checkpoint_dict)
-   //       {
+};
 
-   //         if(model_state_dict.count(name_tensor_pair.first) != 1)
-   //         {
+// Forward for sequential block makes forward pass
+// for each submodule and passed it to the next one
+Tensor torch::Sequential::forward(Tensor input)
+{
+    Tensor out = input;
 
-   //           cout << "WARNING: checkpoint file contains parameter ('" << name_tensor_pair.first << "') "
-   //                << "which is not required by the model. The parameter is not used." << endl;
-   //         }
-   //       }
+    for(auto name_module_pair: modules)
+    {
+        out = name_module_pair.second->forward(out);
+    }
 
-   //       for(auto name_tensor_pair : model_state_dict)
-   //       {
+    return out;
+}
 
-   //         if(checkpoint_dict.count(name_tensor_pair.first) == 1)
-   //         {
+torch::Module::Ptr torch::Sequential::get(int i) const
+{ 
+	return modules[i].second;
+}
 
-   //           // Copy in-place
-   //           name_tensor_pair.second.copy_(checkpoint_dict[name_tensor_pair.first]);
-   //         }
-   //       }
+torch::ReLU::ReLU() 
+{
 
-   //     }
+};
 
-   //};
+torch::ReLU::~ReLU()
+{
 
+};
 
-   //class Sequential : public Module 
-   //{
-   //   public:
-
-   //     Sequential() 
-   //     {
-
-   //       module_name = "Sequential";
-   //     };
-
-   //     ~Sequential() { };
-
-   //     // Forward for sequential block makes forward pass
-   //     // for each submodule and passed it to the next one
-   //     Tensor forward(Tensor input)
-   //     {
-   //       Tensor out = input;
-
-   //       for(auto name_module_pair: modules)
-   //       {
-   //          out = name_module_pair.second->forward(out);
-   //       }
-
-   //       return out;
-   //     }
-
-
-   //     Module::Ptr get(int i) const { return modules[i].second;  }
-
-   //};
-
-
-   //class ReLU : public Module
-   //{
-   //   public:
-
-   //     ReLU() {};
-   //     ~ReLU() {};
-
-   //     Tensor forward(Tensor input) 
-   //     { 
-   //       Threshold_updateOutput(input, input, 0, 0, true) ;
-   //         return input; 
-   //     };
+Tensor torch::ReLU::forward(Tensor input)
+{ 
+    Threshold_updateOutput(input, input, 0, 0, true);
+    return input; 
+};
 
 
-   //     string tostring(int indentation_level=0)
-   //     { 
+string torch::ReLU::tostring(int indentation_level)
+{ 
+    string indentation = string(indentation_level, ' ');
 
-   //       string indentation = string(indentation_level, ' ');
+    return indentation + std::string("ReLU"); 
+}
 
-   //       return indentation + std::string("ReLU"); 
-   //     }
-   //};
+torch::Conv2d::Conv2d(
+	int in_channels,
+    int out_channels,
+    int kernel_width,
+    int kernel_height,
+    int stride_width,
+    int stride_height,
+    int padding_width,
+    int padding_height,
+    int dilation_width,
+    int dilation_height,
+    int groups,
+    int bias):
+	in_channels(in_channels),
+	out_channels(out_channels),
+	kernel_width(kernel_width),
+	kernel_height(kernel_height),
+	stride_width(stride_width),
+	stride_height(stride_height),
+	padding_width(padding_width),
+	padding_height(padding_height),
+	dilation_width(dilation_width),
+	dilation_height(dilation_height),
+	groups(groups),
+	bias(bias)
+{
+	// Register "wight" as a parameter in order to be able to
+	// restore it from a file later on
+	parameters["weight"] = TENSOR_DEFAULT_TYPE.zeros({out_channels,
+														in_channels,
+														kernel_width,
+														kernel_height});
 
+	// Check if we need bias for our convolution
+	if(bias)
+	{
+		parameters["bias"] = TENSOR_DEFAULT_TYPE.zeros({out_channels});
+	}
+	else
+	{   
+		// Doesn't work with TENSOR_DEFAULT_TYPE.tensor();,
+		// This is why we use Tensor()
+		parameters["bias"] = Tensor(); 
+	}
 
-   //class Conv2d : public Module
-   //{
+	// These variables are not needed for forward inferece,
+	// but we need them in order to call an underlying C
+	// function. Later they will be used for backward pass
 
-   //   public:
+	grads["finput"] = TENSOR_DEFAULT_TYPE.tensor();
+	grads["fgradInput"] = TENSOR_DEFAULT_TYPE.tensor(); 
 
-   //       int in_channels;
-   //       int out_channels;
-   //       int kernel_width;
-   //       int kernel_height;
-   //       int stride_width;
-   //       int stride_height;
-   //       int dilation_width;
-   //       int dilation_height;
-   //       int padding_width;
-   //       int padding_height;
-   //       int groups;
-   //       int bias;
-   //       bool dilated;
+	// These variables depend on # of groups, so far only
+	// one group is supported. Needs to be changed to tensor_list
+	// in order to support multiple groups.
+	grads["ones"] = TENSOR_DEFAULT_TYPE.tensor(); 
+	grads["columns"] = TENSOR_DEFAULT_TYPE.tensor();
 
-   //       Conv2d( int in_channels,
-   //               int out_channels,
-   //               int kernel_width,
-   //               int kernel_height,
-   //               int stride_width=1,
-   //               int stride_height=1,
-   //               int padding_width=0,
-   //               int padding_height=0,
-   //               int dilation_width=1,
-   //               int dilation_height=1,
-   //               int groups=1,
-   //               int bias=true) :
+	// There are separate functions for dilated and non-dilated convolutions
+	dilated = false;
 
-   //             in_channels(in_channels),
-   //             out_channels(out_channels),
-   //             kernel_width(kernel_width),
-   //             kernel_height(kernel_height),
-   //             stride_width(stride_width),
-   //             stride_height(stride_height),
-   //             padding_width(padding_width),
-   //             padding_height(padding_height),
-   //             dilation_width(dilation_width),
-   //             dilation_height(dilation_height),
-   //             groups(groups),
-   //             bias(bias)
-   //       {
+	if( (dilation_width > 1) || (dilation_height > 1) )
+	{
+		dilated = true;
+	}
 
-   //         // Register "wight" as a parameter in order to be able to
-   //         // restore it from a file later on
-   //         parameters["weight"] = TENSOR_DEFAULT_TYPE.zeros({out_channels,
-   //                                                           in_channels,
-   //                                                           kernel_width,
-   //                                                           kernel_height});
+};
 
+torch::Conv2d::~Conv2d()
+{
 
-   //         // Check if we need bias for our convolution
-   //         if(bias)
-   //         {
-   //           parameters["bias"] = TENSOR_DEFAULT_TYPE.zeros({out_channels});
-   //         }
-   //         else
-   //         {
-   //           
-   //           // Doesn't work with TENSOR_DEFAULT_TYPE.tensor();,
-   //           // This is why we use Tensor()
-   //           parameters["bias"] = Tensor(); 
-   //         }
+};
 
-   //         // These variables are not needed for forward inferece,
-   //         // but we need them in order to call an underlying C
-   //         // function. Later they will be used for backward pass
+          
+string torch::Conv2d::tostring(int indentation_level)
+{
+	std::stringstream string_stream;
 
-   //         grads["finput"] = TENSOR_DEFAULT_TYPE.tensor();
-   //         grads["fgradInput"] = TENSOR_DEFAULT_TYPE.tensor(); 
+	string indentation = string(indentation_level, ' ');
 
-   //         // These variables depend on # of groups, so far only
-   //         // one group is supported. Needs to be changed to tensor_list
-   //         // in order to support multiple groups.
-   //         grads["ones"] = TENSOR_DEFAULT_TYPE.tensor(); 
-   //         grads["columns"] = TENSOR_DEFAULT_TYPE.tensor();
+	string_stream << indentation << "Conv2d( "
+					<< "in_channels=" << std::to_string(in_channels) << " "
+					<< "out_channels=" << std::to_string(out_channels) << " "
+					<< "kernel_size=(" << std::to_string(kernel_width) << ", " << std::to_string(kernel_height) << ") "
+					<< "stride=(" << std::to_string(stride_width) << ", " << std::to_string(stride_height) << ") "
+					<< "padding=(" << std::to_string(padding_width) << ", " << std::to_string(padding_height) << ") "
+					<< "dilation=(" << std::to_string(dilation_width) << ", " << std::to_string(dilation_height) << ") "
+					<< "groups=" << std::to_string(groups) << " "
+					<< "bias=" << std::to_string(bias) << " )";
 
-   //         // There are separate functions for dilated and non-dilated convolutions
-   //         dilated = false;
+	return string_stream.str();
+};
 
-   //         if( (dilation_width > 1) || (dilation_height > 1) )
-   //         {
-   //           dilated = true;
-   //         }
+Tensor torch::Conv2d::forward(Tensor input)
+{ 
+	Tensor output = input.type().tensor();
 
-   //       };
-
-   //       ~Conv2d() {};
-
-   //       
-   //       string tostring(int indentation_level=0)
-   //       {
-
-   //         std::stringstream string_stream;
-
-   //         string indentation = string(indentation_level, ' ');
-
-   //         string_stream << indentation << "Conv2d( "
-   //                       << "in_channels=" << std::to_string(in_channels) << " "
-   //                       << "out_channels=" << std::to_string(out_channels) << " "
-   //                       << "kernel_size=(" << std::to_string(kernel_width) << ", " << std::to_string(kernel_height) << ") "
-   //                       << "stride=(" << std::to_string(stride_width) << ", " << std::to_string(stride_height) << ") "
-   //                       << "padding=(" << std::to_string(padding_width) << ", " << std::to_string(padding_height) << ") "
-   //                       << "dilation=(" << std::to_string(dilation_width) << ", " << std::to_string(dilation_height) << ") "
-   //                       << "groups=" << std::to_string(groups) << " "
-   //                       << "bias=" << std::to_string(bias) << " )";
-
-   //         return string_stream.str();
-
-   //       };
-
-   //       Tensor forward(Tensor input) 
-   //       { 
-
-   //         Tensor output = input.type().tensor();
-
-   //         if (dilated)
-   //         {
-
-   //           SpatialDilatedConvolution_updateOutput(input,
-   //                                                  output,
-   //                                                  parameters["weight"],
-   //                                                  parameters["bias"],
-   //                                                  grads["columns"],
-   //                                                  grads["ones"],
-   //                                                  kernel_width,
-   //                                                  kernel_height,
-   //                                                  stride_width,
-   //                                                  stride_height,
-   //                                                  padding_width,
-   //                                                  padding_height,
-   //                                                  dilation_width,
-   //                                                  dilation_height);
-   //         }
-   //         else
-   //         {
-
-   //           SpatialConvolutionMM_updateOutput(input,
-   //                                             output,
-   //                                             parameters["weight"],
-   //                                             parameters["bias"],
-   //                                             grads["finput"],
-   //                                             grads["fgradInput"],
-   //                                             kernel_width,
-   //                                             kernel_height,
-   //                                             stride_width,
-   //                                             stride_height,
-   //                                             padding_width,
-   //                                             padding_height);
-   //         }
-
-   //         
-   //         return output; 
-   //       };
-   // };
+	if (dilated)
+	{
+		SpatialDilatedConvolution_updateOutput(
+			input,
+			output,
+			parameters["weight"],
+			parameters["bias"],
+			grads["columns"],
+			grads["ones"],
+			kernel_width,
+			kernel_height,
+			stride_width,
+			stride_height,
+			padding_width,
+			padding_height,
+			dilation_width,
+			dilation_height);
+	}
+	else
+	{
+		SpatialConvolutionMM_updateOutput(
+			input,
+			output,
+			parameters["weight"],
+			parameters["bias"],
+			grads["finput"],
+			grads["fgradInput"],
+			kernel_width,
+			kernel_height,
+			stride_width,
+			stride_height,
+			padding_width,
+			padding_height);
+	}  
+	return output; 
+};
 
    // class BatchNorm2d : public Module
    // {
@@ -1251,117 +1280,38 @@ void torch::save(string hdf5_filename, map<string, Tensor> dict_to_write)
 
    // }
 
-   // vector<string> get_hdf5_file_keys(string hdf5_filename)
-   // {
+vector<string> torch::get_hdf5_file_keys(string hdf5_filename)
+{
+    // We open and close hdf5 file here. It might be an overkill
+    // as we can open the file once, read keys and read tensors outright,
+    // but this way we also add a simple debugging function to be able to
+    // easily get keys without dealing with HDF5 API directly.
 
-   //   // We open and close hdf5 file here. It might be an overkill
-   //   // as we can open the file once, read keys and read tensors outright,
-   //   // but this way we also add a simple debugging function to be able to
-   //   // easily get keys without dealing with HDF5 API directly.
+    // Open the file
+    H5::H5File file = H5::H5File(hdf5_filename, H5F_ACC_RDONLY);
 
-   //   // Open the file
-   //   H5::H5File file = H5::H5File(hdf5_filename, H5F_ACC_RDONLY);
+    vector<string> names;
 
-   //   vector<string> names;
+    // Define a closure to populate our names array
+    auto closure = [] (hid_t loc_id, const char *name, const H5L_info_t *linfo, void *opdata) 
+    {
 
-   //   // Define a closure to populate our names array
-   //   auto closure = [] (hid_t loc_id, const char *name, const H5L_info_t *linfo, void *opdata) 
-   //   {
+    vector<string> * names_array_pointer = reinterpret_cast< vector<string> *>(opdata);
 
-   //     vector<string> * names_array_pointer = reinterpret_cast< vector<string> *>(opdata);
+    names_array_pointer->push_back(string(name));
 
-   //     names_array_pointer->push_back(string(name));
+    return 0;
+    };
 
-   //     return 0;
-   //   };
+    // Run our closure and populate array
+    H5Literate(file.getId(), H5_INDEX_NAME, H5_ITER_INC, NULL, closure, &names);
 
-   //   // Run our closure and populate array
-   //   H5Literate(file.getId(), H5_INDEX_NAME, H5_ITER_INC, NULL, closure, &names);
+    file.close();
 
-   //   file.close();
-
-   //   return names;
-
-   // }
-
-   // map<string, Tensor> load(string hdf5_filename)
-   // {
-
-   //   map<string, Tensor> tensor_dict;
-
-   //   // use our get_names function
-   //   vector<string> tensor_names = get_hdf5_file_keys(hdf5_filename);
-
-   //   H5::H5File file = H5::H5File(hdf5_filename, H5F_ACC_RDONLY);
-
-   //   // Array to store the shape of the current tensor
-   //   hsize_t * dims_hsize_t;
-
-   //   // We need this because one function can't accept hsize_t
-   //   vector<int64_t> dims_int;
-
-   //   // Float buffer to intermediately store weights
-   //   float * float_buffer;
-
-   //   // 'Rank' of the tensor
-   //   int ndims;
-
-   //   // Number of elements in the current tensor
-   //   hsize_t tensor_flattened_size;
-
-   //   Tensor buffer_tensor;
+    return names;
+}
 
 
-   //   for (auto tensor_name: tensor_names)
-   //   {
-
-   //     dims_int.clear();
-
-   //     // Open a 'dataset' which stores current tensor
-   //     H5::DataSet current_dataset = file.openDataSet(tensor_name);
-
-   //     // We can infer the sizes of a store tensor from H5::DataSpace
-   //     H5::DataSpace dataspace = current_dataset.getSpace();
-   //     ndims = dataspace.getSimpleExtentNdims();
-
-   //     // Get the overall number of elements -- we need this
-   //     // to allocate the temporary buffer
-   //     tensor_flattened_size = dataspace.getSimpleExtentNpoints();
-
-   //     // Get the shame of the tensor
-   //     dims_hsize_t = new hsize_t[ndims];
-   //     dataspace.getSimpleExtentDims(dims_hsize_t, NULL);
-
-   //     for (int i = 0; i < ndims; ++i)
-   //     {
-
-   //       // Converting hsize_t to int
-   //       dims_int.push_back(int64_t(dims_hsize_t[i]));
-   //     }
-
-   //     // Allocate temporary float buffer
-   //     // TODO: add support for other types like int
-   //     // and make automatic type inference
-   //     float_buffer = new float[tensor_flattened_size];
-
-   //     current_dataset.read(float_buffer, H5::PredType::NATIVE_FLOAT,
-   //                          dataspace, dataspace);
-
-
-
-   //     buffer_tensor = CPU(kFloat).tensorFromBlob(float_buffer, dims_int);
-
-   //     tensor_dict[tensor_name] = buffer_tensor.type().copy(buffer_tensor);
-
-   //     delete[] float_buffer;
-   //     delete[] dims_hsize_t;
-
-   //   }
-
-   //   file.close();
-
-   //   return tensor_dict;
-   // }
 
 
    // void inspect_checkpoint(string hdf5_filename)

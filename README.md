@@ -241,29 +241,44 @@ Here you can see and example of real-time segmentation:
 ![Alt text](examples/segmentation_demo_preview.gif?raw=true "Title")
 
 ## Installation
+Test with CMake 3.8. Get error on CMake 3.9 as HDF5 find_hdf5 has changed.
 
 ### ATen
-
 [ATen](https://github.com/zdevito/ATen) is a C++ 11 library that wraps a powerfull C Tensor library with
 implementation of numpy-like operations (CPU/CUDA/SPARSE/CUDA-SPARSE backends).
 Follow these steps to install it:  
 
+#### Linux
 0. Make sure you have [dependencies](https://github.com/zdevito/ATen#installation) of ```ATen``` installed.
 1. ```git clone --recursive https://github.com/warmspringwinds/pytorch-cpp```
 2. ```cd pytorch-cpp/ATen;mkdir build;cd build;cmake-gui .. ``` and specify ```CUDA_TOOLKIT_ROOT_DIR```.
 3. ```make``` or better ```make -j7``` (replace ```7``` with a number of cores that you have).
 4. ```cd ../../``` -- returns you back to the root directory (necessary for the next step).
 
-### HDF5
+#### Windows
+Only tested to build with CUDA for pytorch-cpp. Test on your own with CPU only build
 
+0. ```git clone https://github.com/jackyko1991/ATen```
+1. CMake configure and generate
+2. Build and Install
+
+### HDF5
+#### Linux
 We use ```HDF5``` to be able to [easily convert](convert_weights.ipynb) weigths between ```Pytorch``` and ```Pytorch-C++```.
 
 0. ```wget https://support.hdfgroup.org/ftp/HDF5/current18/src/CMake-hdf5-1.8.19.tar.gz; tar xvzf CMake-hdf5-1.8.19.tar.gz```
 1. ```cd CMake-hdf5-1.8.19; ./build-unix.sh```
 2. ```cd ../``` -- return back.
 
-### Opencv
+#### Windows
+0. Download ```HDF5``` source code from office [HDF5 site](https://support.hdfgroup.org/HDF5/release/cmakebuild518.html)
+1. CMake configure, BUILD_SHARED_LIBS is recommended, example and test are not necessary
+2. Generate, build
+3. Install (Optional but highly recoommended)
 
+### OpenCV
+
+#### Ubuntu
 We need ```OpenCV``` for a couple of examples which grab frames from a web camera.
 It is not a dependency and can be removed if necessary.
 This was tested on ```Ubuntu-16``` and might need some changes on a different system.
@@ -278,9 +293,14 @@ interface for building neural networks and inference (so far only forward pass i
 inspired by [cunnproduction](https://github.com/szagoruyko/cunnproduction) library. To install it, follow
 these steps:
 
+#### Linux
 0. ```mkdir build; cd build; cmake-gui ..``` and specify ```CUDA_TOOLKIT_ROOT_DIR```.
 1. ```make```
 2. ```cd ../``` -- return back
+
+#### Windows
+0. CMake and specify ```OpenCV```, ```HDF5``` dependencies
+1. Generate and build (Currently only support release build, since ```ATen``` libraries does not build the Debug and Release separately)
 
 ### Problems with the build
 

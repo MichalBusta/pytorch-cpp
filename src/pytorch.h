@@ -31,6 +31,7 @@ namespace torch
 {
 	map<string, Tensor> load(string hdf5_filename);
 	void save(string hdf5_filename, map<string, Tensor> dict_to_write);
+	vector<string> get_hdf5_file_keys(string hdf5_filename);
 
 	class Module
 	{
@@ -50,11 +51,11 @@ namespace torch
 		// This is done to automatically handle deallocation of created
 		// module objects
 		typedef shared_ptr<Module> Ptr;
-		virtual Tensor Forward(Tensor input);
+		virtual Tensor forward(Tensor input);
 
 		// This function gets overwritten
 		// for the leafnodes like Conv2d, AvgPool2d and so on
-		virtual string ToString(int indentation_level = 0);
+		virtual string tostring(int indentation_level = 0);
 
 		// vector<pair<string, Ptr>> because we want to emulate
 		// the ordered dict this way, meaning that elements
@@ -96,6 +97,65 @@ namespace torch
 		void cuda();
 		void cpu();
 		void save_weights(string hdf5_filename);
+		void load_weights(string hdf5_filename);
+	};
+
+	class Sequential : public Module
+	{
+	public:
+		Sequential();
+		~Sequential();
+		// Forward for sequential block makes forward pass
+		// for each submodule and passed it to the next one
+		Tensor forward(Tensor input);
+		Module::Ptr get(int i) const;
+	};
+
+	class ReLU : public Module
+	{
+	public:
+		ReLU();
+		~ReLU();
+
+		Tensor forward(Tensor input);
+		string tostring(int indentation_level = 0);
+	};
+
+	class Conv2d : public Module
+	{
+	public:
+		int in_channels;
+		int out_channels;
+		int kernel_width;
+		int kernel_height;
+		int stride_width;
+		int stride_height;
+		int dilation_width;
+		int dilation_height;
+		int padding_width;
+		int padding_height;
+		int groups;
+		int bias;
+		bool dilated;
+
+		Conv2d(
+			int in_channels,
+			int out_channels,
+			int kernel_width,
+			int kernel_height,
+			int stride_width = 1,
+			int stride_height = 1,
+			int padding_width = 0,
+			int padding_height = 0,
+			int dilation_width = 1,
+			int dilation_height = 1,
+			int groups = 1,
+			int bias = true); 
+		~Conv2d();
+		
+		string tostring(int indentation_level = 0);
+		Tensor forward(Tensor input);
+
 	};
 }
 

@@ -21,7 +21,7 @@ find_package(CUDA 5.5)
 include_directories(${CUDA_INCLUDE_DIRS})
 
 # HDF5
-find_package(HDF5 REQUIRED COMPONENTS CXX HL)
+find_package(HDF5 REQUIRED COMPONENTS C CXX HL)
 include_directories(${HDF5_INCLUDE_DIRS})
 # HDF5 need to declare build share lib or not
 set(H5_BUILT_AS_DYNAMIC_LIB 1)
@@ -29,18 +29,19 @@ set(H5_BUILT_AS_STATIC_LIB 0)
 SET(LIB_TYPE SHARED)
 SET(H5_ENABLE_SHARED_LIB NO)
 SET (H5_ENABLE_STATIC_LIB NO)
-IF (BUILD_SHARED_LIBS)
+if(BUILD_SHARED_LIBS)
   SET (LIB_TYPE SHARED)
   ADD_DEFINITIONS (-DH5_BUILT_AS_DYNAMIC_LIB)
   set(H5_BUILT_AS_DYNAMIC_LIB 1)
   set(H5_BUILT_AS_STATIC_LIB 0)
   SET (H5_ENABLE_SHARED_LIB YES)
-ELSE
+else()
   SET (LIB_TYPE STATIC)
   ADD_DEFINITIONS (-DH5_BUILT_AS_STATIC_LIB)
   set(H5_BUILT_AS_DYNAMIC_LIB 0)
   set(H5_BUILT_AS_STATIC_LIB 1)
   SET (H5_ENABLE_STATIC_LIB YES)
+endif()
 
 include_directories(
   ${ATen_INSTALL_DIR}/include
@@ -75,6 +76,10 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 message(STATUS ${HDF5_LIBRARIES})
 message(STATUS ${HDF5_HL_LIBRARIES})
 
+if(BUILD_SHARED_LIBS)
+	add_library(pytorch SHARED ${SRC} ${HDR})
+else()
+	add_library(pytorch STATIC ${SRC} ${HDR})
+endif()
 
-add_library(pytorch SHARED ${SRC} ${HDR})
 target_link_libraries(pytorch ${ATEN_LIBS} ${HDF5_HL_LIBRARIES} ${OpenCV_LIBS} ${CUDA_LIBRARIES})
