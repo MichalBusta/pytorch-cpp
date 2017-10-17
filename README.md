@@ -277,7 +277,6 @@ We use ```HDF5``` to be able to [easily convert](convert_weights.ipynb) weigths 
 3. Install (Optional but highly recoommended)
 
 ### OpenCV
-
 #### Ubuntu
 We need ```OpenCV``` for a couple of examples which grab frames from a web camera.
 It is not a dependency and can be removed if necessary.
@@ -287,7 +286,6 @@ This was tested on ```Ubuntu-16``` and might need some changes on a different sy
 
 
 ### Pytorch-C++
-
 ```Pytorch-C++``` is a library on top of ```ATen``` that provides a [Pytorch](http://pytorch.org/)-like
 interface for building neural networks and inference (so far only forward pass is supported)
 inspired by [cunnproduction](https://github.com/szagoruyko/cunnproduction) library. To install it, follow
