@@ -29,9 +29,17 @@ using namespace cv;
 
 namespace torch
 {
+	//IO
 	map<string, Tensor> load(string hdf5_filename);
 	void save(string hdf5_filename, map<string, Tensor> dict_to_write);
 	vector<string> get_hdf5_file_keys(string hdf5_filename);
+	void inspect_checkpoint(string hdf5_filename);
+
+	 // TODO: explicit usage of Opencv's mat -- maybe try to hide it
+	 // so that opencv won't be necessary for the main code
+
+	 // Just put it in the opencv example file instead of the main library
+	Tensor convert_opencv_mat_image_to_tensor(Mat input_mat);
 
 	class Module
 	{
@@ -157,6 +165,237 @@ namespace torch
 		Tensor forward(Tensor input);
 
 	};
+
+	class BatchNorm2d : public Module
+	{
+	public:
+		int num_features;
+		bool affine;
+		bool training;
+		double momentum;
+		double eps;
+
+		BatchNorm2d(
+			int num_features,
+			double eps = 1e-5,
+			double momentum = 0.1,
+			bool affine = true,
+			bool training = false);
+		~BatchNorm2d();
+
+		string tostring(int indentation_level = 0);
+		Tensor forward(Tensor input);
+	};
+
+	class MaxPool2d : public Module
+	{
+	public: 
+		Tensor indices;
+
+		bool ceil_mode;
+		int kernel_width;
+		int kernel_height;
+		int stride_width;
+		int stride_height;
+		int padding_width;
+		int padding_height;
+
+		MaxPool2d(
+			int kernel_width,
+			int kernel_height,
+			int stride_width = 1,
+			int stride_height = 1,
+			int padding_width = 0,
+			int padding_height = 0,
+			bool ceil_mode = false);
+		~MaxPool2d();
+		string tostring(int indentation_level = 0);
+		Tensor forward(Tensor input);
+	};
+
+	class AvgPool2d: public Module
+	{
+	public:
+		bool ceil_mode;
+		bool count_include_pad;
+		int kernel_width;
+		int kernel_height;
+		int stride_width;
+		int stride_height;
+		int padding_width;
+		int padding_height;
+
+		AvgPool2d(
+			int kernel_width,
+			int kernel_height,
+			int stride_width=1,
+			int stride_height=1,
+			int padding_width=0,
+			int padding_height=0,
+			bool ceil_mode=false,
+			bool count_include_pad=true);
+		~AvgPool2d();
+		Tensor forward(Tensor input);
+		string tostring(int indentation_level = 0);
+
+	};
+
+	class Linear : public Module
+	{
+	public:
+		int in_features;
+		int out_features;
+		bool bias;
+
+		Linear(
+			int in_features,
+			int out_features,
+			bool bias = true);
+		~Linear();
+
+		string tostring(int indentation_level = 0);
+		Tensor forward(Tensor input);
+	};
+
+	class BasicBlock : public Module
+	{
+	public:
+		static const int expansion = 1;
+
+		int stride;
+		Module::Ptr conv1;
+		Module::Ptr bn1;
+		Module::Ptr relu;
+		Module::Ptr conv2;
+		Module::Ptr bn2;
+		Module::Ptr downsample;
+
+		BasicBlock(int inplanes, int planes, int stride = 1, int dilation = 1, Module::Ptr downsample = nullptr);
+		~BasicBlock();
+		Tensor forward(Tensor input);
+	};
+
+	class Bottleneck : public Module
+	{
+	public:
+		static const int expansion = 4;
+
+		int stride;
+		Module::Ptr conv1;
+		Module::Ptr bn1;
+		Module::Ptr relu;
+		Module::Ptr conv2;
+		Module::Ptr bn2;
+		Module::Ptr conv3;
+		Module::Ptr bn3;
+		Module::Ptr downsample;
+
+		Bottleneck(int inplanes, int planes, int stride = 1, int dilation = 1, Module::Ptr downsample = nullptr);
+		~Bottleneck();
+
+		Tensor forward(Tensor input);
+	};
+
+	template< class BlockType>
+	class ResNet : public Module
+	{
+	public:
+		int output_stride;
+		int in_planes;
+
+		// Helper variables to help track
+		// dilation factor and output stride
+		int current_stride;
+		int current_dilation;
+
+		// Variables realted to the type of architecture.
+		// Image Segmentation models don't have average pool
+		// layer and Linear layers are converted to 1x1 convolution
+		bool fully_conv;
+		bool remove_avg_pool;
+
+		Module::Ptr conv1;
+		Module::Ptr bn1;
+		Module::Ptr relu;
+		Module::Ptr maxpool;
+		Module::Ptr layer1;
+		Module::Ptr layer2;
+		Module::Ptr layer3;
+		Module::Ptr layer4;
+		Module::Ptr avgpool;
+		Module::Ptr fc;
+
+		ResNet(
+			IntList layers,
+			int num_classes = 1000,
+			bool fully_conv = false,
+			bool remove_avg_pool = false,
+			int output_stride = 32);
+		~ResNet();
+		Tensor forward(Tensor input);
+		Module::Ptr make_layer(int planes, int blocks, int stride);
+	};
+
+	#include "ResNet.hxx"
+
+	// TODO: move this thing out in a separate logical unit: models/resnet
+
+	// Helper functions for a 3 by 3 convolution without bias
+	// Which is used in every resnet architecture.
+	Tensor compute_full_padding_for_dilated_conv(Tensor kernel_size, int dilation = 1);
+	Module::Ptr conv3x3(int in_planes, int out_planes, int stride = 1, int dilation = 1);
+	Module::Ptr resnet_base_conv7x7();
+	Module::Ptr resnet_conv1x1(int in_planes, int planes);
+	Tensor preprocess_batch(Tensor input_batch);
+	Tensor upsample_bilinear(Tensor input_tensor, int output_height, int output_width);
+	Tensor downsample_average(Tensor input_tensor, int downsample_factor);
+	Tensor softmax(Tensor input_tensor);
+	Tensor convert_image_to_batch(Tensor input_img);
+
+	//network architecture
+	Module::Ptr resnet18(int num_classes, bool fully_conv, int output_stride, bool remove_avg_pool);
+	Module::Ptr resnet34(int num_classes, bool fully_conv, int output_stride, bool remove_avg_pool);
+	Module::Ptr resnet50(int num_classes, bool fully_conv, int output_stride, bool remove_avg_pool);
+	Module::Ptr resnet101(int num_classes, bool fully_conv, int output_stride, bool remove_avg_pool);
+	Module::Ptr resnet152(int num_classes, bool fully_conv, int output_stride, bool remove_avg_pool);
+
+	// This one is just to build architecture, we can create functions to actually load
+	// pretrained models like in pytorch
+	class Resnet18_8s : public Module
+	{
+	public:
+		int num_classes;
+		Module::Ptr resnet18_8s;
+
+		Resnet18_8s(int num_classes = 21);
+		~Resnet18_8s();
+
+		Tensor forward(Tensor input);
+	};
+
+	class Resnet34_8s : public Module
+	{
+	public:
+		int num_classes;
+		Module::Ptr resnet34_8s;
+
+		Resnet34_8s(int num_classes = 21);
+		~Resnet34_8s();
+
+		Tensor forward(Tensor input);
+	};
+
+	// Maybe add new options like add_softmax?
+	// imagenet
+	Module::Ptr resnet18_imagenet();
+	Module::Ptr resnet34_imagenet();
+	Module::Ptr resnet50_imagenet();
+	Module::Ptr resnet101_imagenet();
+	Module::Ptr resnet152_imagenet();
+
+	// Pascal VOC
+	Module::Ptr resnet18_8s_pascal_voc();
+	Module::Ptr resnet34_8s_pascal_voc();
 }
 
 #endif // !PYTORCH_H

@@ -48,33 +48,25 @@ include_directories(
 
   # dense
   ${ATen_INSTALL_DIR}/lib/include/TH
-  # ${ATen_INSTALL_DIR}/lib/include/TH/generic
-  # ${ATen_INSTALL_DIR}/lib/include/TH/vector
   ${ATen_INSTALL_DIR}/lib/include/THC
-  # ${ATen_INSTALL_DIR}/lib/include/THC/generic
 
   # sparse
   ${ATen_INSTALL_DIR}/lib/include/THS
-  # ${ATen_INSTALL_DIR}/lib/include/THS/generic
   ${ATen_INSTALL_DIR}/lib/include/THCS
-  # ${ATen_INSTALL_DIR}/lib/include/THCS/generic
 
   # NN
   ${ATen_INSTALL_DIR}/lib/include/THNN
-  # ${ATen_INSTALL_DIR}/lib/include/THNN/generic
   ${ATen_INSTALL_DIR}/lib/include/THCUNN
-  # ${ATen_INSTALL_DIR}/lib/include/THCUNN/generic
   )
 
-file(GLOB SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
+file(
+  GLOB SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp 
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/*.hxx)
 file(GLOB HDR ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h)
 
 file(GLOB_RECURSE ATEN_LIBS ${ATen_INSTALL_DIR}/lib/*.lib)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
-
-message(STATUS ${HDF5_LIBRARIES})
-message(STATUS ${HDF5_HL_LIBRARIES})
 
 if(BUILD_SHARED_LIBS)
 	add_library(pytorch SHARED ${SRC} ${HDR})
@@ -83,3 +75,5 @@ else()
 endif()
 
 target_link_libraries(pytorch ${ATEN_LIBS} ${HDF5_HL_LIBRARIES} ${OpenCV_LIBS} ${CUDA_LIBRARIES})
+
+add_subdirectory(example)
