@@ -76,4 +76,4 @@ endif()
 
 target_link_libraries(pytorch ${ATEN_LIBS} ${HDF5_HL_LIBRARIES} ${OpenCV_LIBS} ${CUDA_LIBRARIES})
 
-add_subdirectory(example)
+# add_subdirectory(example)
