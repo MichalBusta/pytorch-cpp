@@ -1,3 +1,6 @@
+#ifndef _RESNET_HXX_
+#define _RESNET_HXX_
+
 // First depth input is the same for all resnet models
 template <class BlockType>
 torch::ResNet<BlockType>::ResNet(
@@ -164,3 +167,5 @@ torch::Module::Ptr torch::ResNet<BlockType>::make_layer(int planes, int blocks, 
 
 	return new_layer;
 }
+
+#endif

@@ -1,4 +1,5 @@
 #include "pytorch.h"
+#include "ResNet.hxx"
 
 torch::Resnet18_8s::Resnet18_8s(int num_classes):
             num_classes(num_classes)

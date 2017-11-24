@@ -9,7 +9,7 @@ notebook -- results differ no more than 10^{-5}.
 #include "ATen/Type.h"
 #include <map>
 
-#include <pytorch.cpp>
+#include <pytorch.h>
 
 using namespace at;
 
@@ -19,21 +19,22 @@ using std::string;
 
 int main()
 {
+	//torch::Module module = torch::Module();
 
-  auto net = torch::resnet50_imagenet();
+	auto net = torch::resnet50_imagenet();
 
-  net->load_weights("../resnet50_imagenet.h5");
-  net->cuda();
+  //net->load_weights("../resnet50_imagenet.h5");
+  //net->cuda();
 
   Tensor dummy_input = CUDA(kFloat).ones({1, 3, 224, 224});
 
-  auto result = net->forward(dummy_input);
+  //Tensor result = net->forward(dummy_input);
 
   map<string, Tensor> dict;
 
-  dict["main"] = result.toBackend(Backend::CPU);
+  //dict["main"] = result.toBackend(Backend::CPU);
 
-  torch::save("resnet50_output.h5", dict);
+  //torch::save("resnet50_output.h5", dict);
 
   return 0;
 }

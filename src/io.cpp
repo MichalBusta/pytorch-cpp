@@ -78,7 +78,6 @@ void torch::save(string hdf5_filename, map<string, Tensor> dict_to_write)
 
 	for (auto name_tensor_pair : dict_to_write)
 	{
-
 		auto tensor_to_write = name_tensor_pair.second.contiguous();
 		auto tensor_name = name_tensor_pair.first;
 

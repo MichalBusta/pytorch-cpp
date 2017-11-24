@@ -70,10 +70,21 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 if(BUILD_SHARED_LIBS)
 	add_library(pytorch SHARED ${SRC} ${HDR})
+  include(GenerateExportHeader)
+  GENERATE_EXPORT_HEADER(pytorch           
+    BASE_NAME pytorch
+    EXPORT_MACRO_NAME PYTORCH_EXPORTS
+    EXPORT_FILE_NAME pytorch_exports.h
+    STATIC_DEFINE SHARED_EXPORTS_BUILT_AS_STATIC)
 else()
 	add_library(pytorch STATIC ${SRC} ${HDR})
 endif()
 
+if(WIN32)
+  set(H5_BUILT_AS_DYNAMIC_LIB 1)
+  set(H5_BUILT_AS_STATIC_LIB 0)
+endif()
+
 target_link_libraries(pytorch ${ATEN_LIBS} ${HDF5_HL_LIBRARIES} ${OpenCV_LIBS} ${CUDA_LIBRARIES})
 
-# add_subdirectory(example)
+add_subdirectory(examples)
