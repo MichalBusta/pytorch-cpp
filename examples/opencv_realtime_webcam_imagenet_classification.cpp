@@ -10,7 +10,7 @@ is printed over the image.
 #include <opencv2/opencv.hpp>
 
 #include <pytorch.cpp>
-#include <imagenet_classes.cpp>
+//#include <imagenet_classes.cpp>
 
 using namespace at;
 
@@ -107,6 +107,7 @@ int main()
 
     auto full_prediction = net->forward(input_tensor_gpu);
 
+    /*
     auto softmaxed = torch::softmax(full_prediction);
 
     Tensor top_probability_indexes;
@@ -120,7 +121,7 @@ int main()
 
     putText(frame, imagenet_classes[ accessor[0]  ], cvPoint(30,30), 
     FONT_HERSHEY_COMPLEX_SMALL, 0.8, cvScalar(200,200,250), 1, CV_AA);
-
+		*/
     imshow("Masked image", frame);
 
     if(waitKey(30) >= 0 ) break;

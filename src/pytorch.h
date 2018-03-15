@@ -10,7 +10,7 @@
 
 #include <opencv2/opencv.hpp>
 
-#define TENSOR_DEFAULT_TYPE CPU(kFloat)
+#define TENSOR_DEFAULT_TYPE CUDA(kFloat)
 
 using namespace at;
 
@@ -296,6 +296,8 @@ namespace torch
 		Tensor forward(Tensor input);
 	};
 
+	Module::Ptr resnet_base_conv7x7();
+
 	template< class BlockType>
 	class ResNet : public Module
 	{
@@ -344,12 +346,8 @@ namespace torch
 	// Which is used in every resnet architecture.
 	Tensor compute_full_padding_for_dilated_conv(Tensor kernel_size, int dilation = 1);
 	Module::Ptr conv3x3(int in_planes, int out_planes, int stride = 1, int dilation = 1);
-	Module::Ptr resnet_base_conv7x7();
 	Module::Ptr resnet_conv1x1(int in_planes, int planes);
 	Tensor preprocess_batch(Tensor input_batch);
-	Tensor upsample_bilinear(Tensor input_tensor, int output_height, int output_width);
-	Tensor downsample_average(Tensor input_tensor, int downsample_factor);
-	Tensor softmax(Tensor input_tensor);
 	Tensor convert_image_to_batch(Tensor input_img);
 
 	//network architecture

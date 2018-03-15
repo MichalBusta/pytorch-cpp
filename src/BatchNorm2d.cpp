@@ -53,20 +53,5 @@ string torch::BatchNorm2d::tostring(int indentation_level)
 
 Tensor torch::BatchNorm2d::forward(Tensor input)
 {
-
-	Tensor output = input.type().tensor();
-
-	BatchNormalization_updateOutput(
-		input,
-		output,
-		parameters["weight"],
-		parameters["bias"],
-		buffers["running_mean"],
-		buffers["running_var"],
-		grads["save_mean"],
-		grads["save_std"],
-		training,
-		momentum,
-		eps);
-	return output;
+	return batch_norm(input, parameters["weight"], parameters["bias"], buffers["running_mean"], buffers["running_var"], training, momentum, eps, false);
 };

@@ -29,7 +29,7 @@ torch::Conv2d::Conv2d(
 	// Register "wight" as a parameter in order to be able to
 	// restore it from a file later on
 	parameters["weight"] = TENSOR_DEFAULT_TYPE.zeros({ out_channels,
-		in_channels,
+		in_channels / groups,
 		kernel_width,
 		kernel_height });
 
@@ -95,41 +95,6 @@ string torch::Conv2d::tostring(int indentation_level)
 
 Tensor torch::Conv2d::forward(Tensor input)
 {
-	Tensor output = input.type().tensor();
-
-	if (dilated)
-	{
-		SpatialDilatedConvolution_updateOutput(
-			input,
-			output,
-			parameters["weight"],
-			parameters["bias"],
-			grads["columns"],
-			grads["ones"],
-			kernel_width,
-			kernel_height,
-			stride_width,
-			stride_height,
-			padding_width,
-			padding_height,
-			dilation_width,
-			dilation_height);
-	}
-	else
-	{
-		SpatialConvolutionMM_updateOutput(
-			input,
-			output,
-			parameters["weight"],
-			parameters["bias"],
-			grads["finput"],
-			grads["fgradInput"],
-			kernel_width,
-			kernel_height,
-			stride_width,
-			stride_height,
-			padding_width,
-			padding_height);
-	}
-	return output;
+	return conv2d(input, parameters["weight"], parameters["bias"], {stride_width, stride_height}, {padding_width, padding_height}, {dilation_width, dilation_height}, groups);
+	//return cudnn_convolution(input, parameters["weight"], parameters["bias"], {stride_width, stride_height}, {padding_width, padding_height}, {dilation_width, dilation_height}, groups, false, false);
 };

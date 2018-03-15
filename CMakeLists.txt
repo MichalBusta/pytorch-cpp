@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 project(pytorch-cpp)
 
 # ATen
-set(ATen_INSTALL_DIR  D:/MSVC-build/ATen/install)
+#set(ATen_INSTALL_DIR  D:/MSVC-build/ATen/install)
 
 # C++11
 if(CMAKE_VERSION VERSION_LESS "3.1")
@@ -64,7 +64,9 @@ file(
   ${CMAKE_CURRENT_SOURCE_DIR}/src/*.hxx)
 file(GLOB HDR ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h)
 
-file(GLOB_RECURSE ATEN_LIBS ${ATen_INSTALL_DIR}/lib/*.lib)
+link_directories(/home/busta/git/ATen/build/lib/THC /home/busta/git/ATen/build/lib/TH /home/busta/git/ATen/build/install/lib)
+set(ATEN_LIBS "ATen -lTH -lTHC -lgomp")
+#file(GLOB_RECURSE ATEN_LIBS ${ATen_INSTALL_DIR}/lib/*.lib)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 

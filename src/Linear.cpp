@@ -53,7 +53,7 @@ Tensor torch::Linear::forward(Tensor input)
 
     Tensor output = input.type().zeros({input.size(0), parameters["weight"].size(0)});
 
-    output.addmm_(0, 1, input, parameters["weight"].t());
+    output.addmm_(input, parameters["weight"].t(), 0, 1);
          
     if(bias)
     {
