@@ -65,7 +65,7 @@ file(
 file(GLOB HDR ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h)
 
 link_directories(/home/busta/git/ATen/build/lib/THC /home/busta/git/ATen/build/lib/TH /home/busta/git/ATen/build/install/lib)
-set(ATEN_LIBS "ATen -lTH -lTHC -lgomp")
+set(ATEN_LIBS "ATen -lgomp")
 #file(GLOB_RECURSE ATEN_LIBS ${ATen_INSTALL_DIR}/lib/*.lib)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
