@@ -13,9 +13,6 @@ endif()
 
 OPTION (BUILD_SHARED_LIBS "Build Shared Libraries" ON)
 
-# OpenCV
-find_package(OpenCV REQUIRED)
-
 # CUDA
 find_package(CUDA 5.5)
 include_directories(${CUDA_INCLUDE_DIRS})
@@ -87,6 +84,6 @@ if(WIN32)
   set(H5_BUILT_AS_STATIC_LIB 0)
 endif()
 
-target_link_libraries(pytorch ${ATEN_LIBS} ${HDF5_HL_LIBRARIES} ${OpenCV_LIBS} ${CUDA_LIBRARIES})
+target_link_libraries(pytorch ${ATEN_LIBS} ${HDF5_HL_LIBRARIES} ${CUDA_LIBRARIES})
 
-add_subdirectory(examples)
+#add_subdirectory(examples)

@@ -100,27 +100,6 @@ void torch::inspect_checkpoint(string hdf5_filename)
     }
 }
 
-// TODO: explicit usage of Opencv's mat -- maybe try to hide it
-// so that opencv won't be necessary for the main code
-
-// Just put it in the opencv example file instead of the main library
-Tensor torch::convert_opencv_mat_image_to_tensor(Mat input_mat)
-{
-    // Returns Byte Tensor with 0-255 values and (height x width x 3) shape
-    // TODO: 
-    // (1) double-check if this kind of conversion will always work
-    //     http://docs.opencv.org/3.1.0/d3/d63/classcv_1_1Mat.html in 'Detailed Description'
-    // (2) so far only works with byte representation of Mat
-
-    unsigned char *data = (unsigned char*)(input_mat.data);
-
-    int output_height = input_mat.rows;
-    int output_width = input_mat.cols;
-
-    auto output_tensor = CPU(kByte).tensorFromBlob(data, {output_height, output_width, input_mat.channels()});
-
-    return output_tensor;
-}
 
 Tensor torch::convert_image_to_batch(Tensor input_img)
 {

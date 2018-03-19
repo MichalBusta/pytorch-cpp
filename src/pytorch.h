@@ -8,7 +8,6 @@
 #include <map>
 #include "H5Cpp.h"
 
-#include <opencv2/opencv.hpp>
 
 #define TENSOR_DEFAULT_TYPE CUDA(kFloat)
 
@@ -25,8 +24,6 @@ using std::cout;
 using std::endl;
 using std::tie;
 
-using namespace cv;
-
 namespace torch
 {
 	//IO
@@ -34,12 +31,6 @@ namespace torch
 	void save(string hdf5_filename, map<string, Tensor> dict_to_write);
 	vector<string> get_hdf5_file_keys(string hdf5_filename);
 	void inspect_checkpoint(string hdf5_filename);
-
-	 // TODO: explicit usage of Opencv's mat -- maybe try to hide it
-	 // so that opencv won't be necessary for the main code
-
-	 // Just put it in the opencv example file instead of the main library
-	Tensor convert_opencv_mat_image_to_tensor(Mat input_mat);
 
 	class Module
 	{
@@ -128,6 +119,16 @@ namespace torch
 		Tensor forward(Tensor input);
 		string tostring(int indentation_level = 0);
 	};
+
+	class CReLU : public Module
+		{
+		public:
+			CReLU();
+			~CReLU();
+
+			Tensor forward(Tensor input);
+			string tostring(int indentation_level = 0);
+		};
 
 	class Conv2d : public Module
 	{
