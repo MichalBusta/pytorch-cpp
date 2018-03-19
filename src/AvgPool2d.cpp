@@ -28,20 +28,7 @@ torch::AvgPool2d::~AvgPool2d()
 Tensor torch::AvgPool2d::forward(Tensor input)
 {
 	Tensor output = input.type().tensor();
-
-	SpatialAveragePooling_updateOutput(
-		input,
-		output,
-		kernel_width,
-		kernel_height,
-		stride_width,
-		stride_height,
-		padding_width,
-		padding_height,
-		ceil_mode,
-		count_include_pad);
-
-	return output; 
+	return avg_pool2d(input, {kernel_height, kernel_height}, {stride_height, stride_width}, {padding_height, padding_width}, ceil_mode, count_include_pad);
 };
 
 string torch::AvgPool2d::tostring(int indentation_level)

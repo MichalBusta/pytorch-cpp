@@ -100,66 +100,6 @@ void torch::inspect_checkpoint(string hdf5_filename)
     }
 }
 
-Tensor torch::upsample_bilinear(Tensor input_tensor, int output_height, int output_width)
-{
-    Tensor output = input_tensor.type().tensor();
-
-    SpatialUpSamplingBilinear_updateOutput(input_tensor, output, output_height, output_width);
-
-    return output;
-}
-
-Tensor torch::downsample_average(Tensor input_tensor, int downsample_factor)
-{
-    // Temporary solution for downsampling:
-    // https://discuss.pytorch.org/t/how-to-simpler-downsample-an-image-tensor-with-bicubic/1296/2
-
-    // Helper functions
-    // http://nbviewer.jupyter.org/gist/tnarihi/54744612d35776f53278
-    auto get_kernel_size = [](int factor) 
-    { 
-
-    return 2 * factor - factor % 2;
-    };
-
-    auto get_pading_size = [](int factor) 
-    { 
-
-    return int(ceil((factor - 1) / 2.));
-    };
-
-    Tensor output = input_tensor.type().tensor();
-
-    int kernel_size = get_kernel_size(downsample_factor);
-    int padding = get_pading_size(downsample_factor);
-
-    cout << "kernel size: " << kernel_size << ", padding: " << padding << endl; 
-
-
-    SpatialAveragePooling_updateOutput(input_tensor,
-                                        output,
-                                        kernel_size,
-                                        kernel_size,
-                                        downsample_factor,
-                                        downsample_factor,
-                                        padding,
-                                        padding,
-                                        false,
-                                        true);
-
-    return output;
-}
-
-Tensor torch::softmax(Tensor input_tensor)
-{
-    Tensor output = input_tensor.type().tensor();
-
-    SoftMax_updateOutput(input_tensor, output);
-
-    return output;
-}
-
-
 // TODO: explicit usage of Opencv's mat -- maybe try to hide it
 // so that opencv won't be necessary for the main code
 
@@ -177,7 +117,7 @@ Tensor torch::convert_opencv_mat_image_to_tensor(Mat input_mat)
     int output_height = input_mat.rows;
     int output_width = input_mat.cols;
 
-    auto output_tensor = CPU(kByte).tensorFromBlob(data, {output_height, output_width, 3});
+    auto output_tensor = CPU(kByte).tensorFromBlob(data, {output_height, output_width, input_mat.channels()});
 
     return output_tensor;
 }

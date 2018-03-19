@@ -30,7 +30,7 @@ Tensor torch::Resnet18_8s::forward(Tensor input)
 
 	auto subsampled_prediction = resnet18_8s->forward(input);
 
-	auto full_prediction = upsample_bilinear(subsampled_prediction, output_height, output_width);
+	auto full_prediction = at::upsample_bilinear2d(subsampled_prediction, {output_height, output_width});
 
 	return full_prediction;
 }
@@ -68,7 +68,7 @@ Tensor torch::Resnet34_8s::forward(Tensor input)
 
 	auto subsampled_prediction = resnet34_8s->forward(input);
 
-	auto full_prediction = upsample_bilinear(subsampled_prediction, output_height, output_width);
+	auto full_prediction = at::upsample_bilinear2d(subsampled_prediction, {output_height, output_width});
 
 	return full_prediction;
 }

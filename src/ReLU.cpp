@@ -12,8 +12,8 @@ torch::ReLU::~ReLU()
 
 Tensor torch::ReLU::forward(Tensor input)
 {
-	Threshold_updateOutput(input, input, 0, 0, true);
-	return input;
+	//threshold_forward_out(input, input, 0, 0);
+	return input.clamp_min(0);
 };
 
 

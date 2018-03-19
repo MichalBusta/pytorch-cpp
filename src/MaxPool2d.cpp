@@ -31,16 +31,8 @@ Tensor torch::MaxPool2d::forward(Tensor input)
 {
 	Tensor output = input.type().tensor();
 
-	SpatialMaxPooling_updateOutput(input,
-		output,
-		grads["indices"],
-		kernel_width,
-		kernel_width,
-		stride_width,
-		stride_height,
-		padding_width,
-		padding_height,
-		ceil_mode);
+	max_pool2d_forward_out(input, grads["indices"], output, {kernel_width, kernel_height}, {stride_width, stride_height}, {padding_width, padding_height}, {0, 0}, ceil_mode);
+
 
 	return output;
 };

@@ -11,6 +11,19 @@ else()
   set(CMAKE_CXX_STANDARD 11)
 endif()
 
+if(MSVC)
+  foreach(flag_var
+            CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
+            CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+        if(${flag_var} MATCHES "/W3")
+            string(REGEX REPLACE "/W3" "/w" ${flag_var} "${${flag_var}}")
+        endif(${flag_var} MATCHES "/W3")
+	if(${flag_var} MATCHES "/MD")
+            string(REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
+        endif(${flag_var} MATCHES "/MD")
+    endforeach(flag_var)
+endif(MSVC)
+
 OPTION (BUILD_SHARED_LIBS "Build Shared Libraries" ON)
 
 # OpenCV
@@ -28,10 +41,10 @@ find_package (HDF5 NAMES hdf5 COMPONENTS C CXX HL ${SEARCH_TYPE})
 #find_package(HDF5 REQUIRED COMPONENTS C CXX HL)
 include_directories(${HDF5_INCLUDE_DIR})
 # HDF5 need to declare build share lib or not
-set(H5_BUILT_AS_DYNAMIC_LIB 0)
-set(H5_BUILT_AS_STATIC_LIB 1)
-SET(H5_ENABLE_SHARED_LIB NO)
-SET (H5_ENABLE_STATIC_LIB NO)
+if(WIN32)
+  set(H5_BUILT_AS_DYNAMIC_LIB 0)
+  set(H5_BUILT_AS_STATIC_LIB 1)
+endif()
 
 include_directories(
   ${ATen_INSTALL_DIR}/include
@@ -54,7 +67,13 @@ file(
   ${CMAKE_CURRENT_SOURCE_DIR}/src/*.hxx)
 file(GLOB HDR ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h)
 
-file(GLOB_RECURSE ATEN_LIBS ${ATen_INSTALL_DIR}/lib/*.lib)
+link_directories(${ATen_INSTALL_DIR}/lib)
+if (UNIX)
+  set(ATEN_LIBS "ATen -lgomp")
+else(UNIX)
+  set(ATEN_LIBS "ATen")
+endif(UNIX)
+#file(GLOB_RECURSE ATEN_LIBS ${ATen_INSTALL_DIR}/lib/*.lib)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
@@ -70,11 +89,8 @@ else()
 	add_library(pytorch STATIC ${SRC} ${HDR})
 endif()
 
-if(WIN32)
-  set(H5_BUILT_AS_DYNAMIC_LIB 1)
-  set(H5_BUILT_AS_STATIC_LIB 0)
-endif()
+link_directories(D:/devel/HDF5-1.8.20-win64/lib)
 
-target_link_libraries(pytorch ${ATEN_LIBS} ${HDF5_HL_LIBRARIES} ${OpenCV_LIBS} ${CUDA_LIBRARIES})
+target_link_libraries(pytorch  D:/devel/hdf5-1.8.20/hdf5-1.8.20/build/c++/src/Release/libhdf5_cpp.lib D:/devel/hdf5-1.8.20/hdf5-1.8.20/build/src/Release/libhdf5.lib ${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES} ${ATEN_LIBS} ${OpenCV_LIBS} ${CUDA_LIBRARIES})
 
-add_subdirectory(examples)
+#add_subdirectory(examples)
