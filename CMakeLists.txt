@@ -26,9 +26,6 @@ endif(MSVC)
 
 OPTION (BUILD_SHARED_LIBS "Build Shared Libraries" ON)
 
-# OpenCV
-find_package(OpenCV REQUIRED)
-
 # CUDA
 find_package(CUDA 5.5)
 include_directories(${CUDA_INCLUDE_DIRS})
@@ -91,6 +88,11 @@ endif()
 
 link_directories(D:/devel/HDF5-1.8.20-win64/lib)
 
-target_link_libraries(pytorch  D:/devel/hdf5-1.8.20/hdf5-1.8.20/build/c++/src/Release/libhdf5_cpp.lib D:/devel/hdf5-1.8.20/hdf5-1.8.20/build/src/Release/libhdf5.lib ${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES} ${ATEN_LIBS} ${OpenCV_LIBS} ${CUDA_LIBRARIES})
+if(MSVC)
+  target_link_libraries(pytorch  D:/devel/hdf5-1.8.20/hdf5-1.8.20/build/c++/src/Release/libhdf5_cpp.lib D:/devel/hdf5-1.8.20/hdf5-1.8.20/build/src/Release/libhdf5.lib ${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES} ${ATEN_LIBS} ${OpenCV_LIBS} ${CUDA_LIBRARIES})
+else(MSVC)
+  target_link_libraries(pytorch ${ATEN_LIBS} ${HDF5_HL_LIBRARIES} ${CUDA_LIBRARIES})
+endif(MSVC)
+
 
 #add_subdirectory(examples)
